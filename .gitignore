@@ -1,0 +1,84 @@
+# ── Certificates & secrets (NEVER commit these) ──────────────
+*.pem
+*.crt
+*.key
+*.p12
+*.pfx
+*.der
+secrets.h
+secrets.c
+config.h
+
+# ── macOS ─────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Directory metadata
+.directory
+
+# ── Temporary files ───────────────────────────────────────────
+*~
+*.swp
+*.swo
+*.bak
+*.tmp
+*.log
+
+# ── Build artifacts ───────────────────────────────────────────
+**/build/
+build/
+*.o
+*.a
+*.out
+*.exe
+*.bin
+*.elf
+*.map
+flasher_args.json
+
+# ── ESP-IDF specific ──────────────────────────────────────────
+sdkconfig.old
+sdkconfig                   # generated from sdkconfig.defaults — don't track
+/components/.idf/
+**/components/.idf/
+managed_components/
+dependencies.lock
+.espressif/
+
+# ── SPIFFS image (contains certs baked in) ────────────────────
+spiffs.bin
+spiffs_image/
+*.spiffs
+
+# ── CMake generated ───────────────────────────────────────────
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+CTestTestfile.cmake
+
+# ── Python ────────────────────────────────────────────────────
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.egg-info/
+dist/
+venv/
+.venv/
+env/
+
+# ── Language servers ──────────────────────────────────────────
+.clangd/
+.ccls-cache/
+compile_commands.json
+
+# ── Windows ───────────────────────────────────────────────────
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+*.user
+*.workspace
+*.suo
+*.sln.docstates

@@ -1,0 +1,35 @@
+idf_component_register(
+    SRCS
+        "main.c"
+        "decode_powermeter.c"
+        "decode_pressure.c"
+        "relay_control.c"
+        "pressure_alarm.c"
+        "modbus_utils.c"
+        "net_utils.c"
+        "mqtt_manager.c"
+        "ntp_sync.c"
+        "cJSON.c"
+        "config.c"
+        "machine_run.c"
+        "device_config.c"
+        "device_command.c"
+    INCLUDE_DIRS "."
+    REQUIRES
+        esp_wifi
+        esp_eth
+        esp_netif
+        esp_event
+        lwip
+        nvs_flash
+        esp_driver_uart
+        esp_driver_gpio
+        esp_driver_spi
+        esp_timer
+        esp_system
+        esp-tls
+        mbedtls
+        spiffs
+        w5500
+        esp_partition
+)

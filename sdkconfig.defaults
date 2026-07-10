@@ -1,0 +1,60 @@
+# ── Core ─────────────────────────────────────────────────
+CONFIG_IDF_TARGET="esp32s3"
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+
+# ── FreeRTOS ──────────────────────────────────────────────
+CONFIG_FREERTOS_HZ=1000
+CONFIG_FREERTOS_UNICORE=n
+
+# ── Task watchdog (maps to MicroPython WDT) ───────────────
+CONFIG_ESP_TASK_WDT_EN=y
+CONFIG_ESP_TASK_WDT_INIT=y
+CONFIG_ESP_TASK_WDT_TIMEOUT_S=8
+CONFIG_ESP_TASK_WDT_PANIC=y
+
+# ── WiFi ──────────────────────────────────────────────────
+CONFIG_ESP_WIFI_STATIC_RX_BUFFER_NUM=10
+CONFIG_ESP_WIFI_DYNAMIC_RX_BUFFER_NUM=32
+CONFIG_ESP_WIFI_TX_BUFFER_TYPE_DYNAMIC=y
+
+# ── LWIP / networking ─────────────────────────────────────
+CONFIG_LWIP_SO_REUSE=y
+CONFIG_LWIP_TCP_KEEPALIVE=y
+CONFIG_LWIP_SNTP_MAX_SERVERS=3
+CONFIG_LWIP_DHCP_COARSE_TIMER_SECS=1
+CONFIG_LWIP_DNS=y
+
+# ── TLS / mbedTLS ─────────────────────────────────────────
+CONFIG_MBEDTLS_CERTIFICATE_BUNDLE=y
+CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_DEFAULT_FULL=y
+# Increase TLS buffer for MQTT over TLS
+CONFIG_MBEDTLS_SSL_IN_CONTENT_LEN=8192
+CONFIG_MBEDTLS_SSL_OUT_CONTENT_LEN=4096
+
+# ── MQTT (esp-mqtt component) ─────────────────────────────
+CONFIG_MQTT_PROTOCOL_311=y
+CONFIG_MQTT_TRANSPORT_SSL=y
+CONFIG_MQTT_TRANSPORT_WEBSOCKET=n
+CONFIG_MQTT_USE_CUSTOM_CONFIG=n
+
+# ── UART / RS-485 ─────────────────────────────────────────
+CONFIG_UART_ISR_IN_IRAM=y
+
+# ── SPI (W5500 Ethernet) ──────────────────────────────────
+CONFIG_SPI_MASTER_ISR_IN_IRAM=y
+
+# ── Heap ──────────────────────────────────────────────────
+CONFIG_HEAP_POISONING_DISABLED=y
+
+# ── Log level ─────────────────────────────────────────────
+CONFIG_LOG_DEFAULT_LEVEL_INFO=y
+CONFIG_LOG_COLORS=y
+
+# ── Partition table ───────────────────────────────────────
+CONFIG_PARTITION_TABLE_SINGLE_APP=y
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
+CONFIG_PARTITION_TABLE_FILENAME="partitions.csv"
+
+# ── SPIFFS for cert files ─────────────────────────────────
+CONFIG_SPIFFS_MAX_PARTITIONS=1
