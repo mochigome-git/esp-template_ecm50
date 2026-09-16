@@ -88,6 +88,35 @@ static void on_wifi_event(void *arg, esp_event_base_t base,
 
 /* ── LAN (W5500) ────────────────────────────────────────── */
 
+static esp_err_t apply_lan_static_ip(void)
+{
+    ESP_RETURN_ON_ERROR(esp_netif_dhcpc_stop(s_netif_eth),
+                        TAG, "DHCPC stop failed");
+
+    ip4_addr_t ip, gw, mask, dns;
+    ip4addr_aton(LAN_STATIC_IP, &ip);
+    ip4addr_aton(LAN_STATIC_GATEWAY, &gw);
+    ip4addr_aton(LAN_STATIC_NETMASK, &mask);
+    ip4addr_aton(LAN_STATIC_DNS, &dns);
+
+    esp_netif_ip_info_t ip_info = {0};
+    ip_info.ip.addr = ip.addr;
+    ip_info.gw.addr = gw.addr;
+    ip_info.netmask.addr = mask.addr;
+    ESP_RETURN_ON_ERROR(esp_netif_set_ip_info(s_netif_eth, &ip_info),
+                        TAG, "Set static IP failed");
+
+    esp_netif_dns_info_t dns_info = {0};
+    dns_info.ip.type = ESP_IPADDR_TYPE_V4;
+    dns_info.ip.u_addr.ip4.addr = dns.addr;
+    ESP_RETURN_ON_ERROR(esp_netif_set_dns_info(s_netif_eth, ESP_NETIF_DNS_MAIN, &dns_info),
+                        TAG, "Set static DNS failed");
+
+    ESP_LOGI(TAG, "[LAN] Static IP: %s  GW: %s  Mask: %s  DNS: %s",
+             LAN_STATIC_IP, LAN_STATIC_GATEWAY, LAN_STATIC_NETMASK, LAN_STATIC_DNS);
+    return ESP_OK;
+}
+
 static esp_err_t start_lan(void)
 {
     ESP_LOGI(TAG, "[LAN] Configuring W5500...");
@@ -171,6 +200,12 @@ static esp_err_t start_lan(void)
     esp_eth_netif_glue_handle_t glue = esp_eth_new_netif_glue(s_eth_hdl);
     ESP_RETURN_ON_ERROR(esp_netif_attach(s_netif_eth, glue),
                         TAG, "ETH netif attach failed");
+
+    /* ── Static IP (optional) ────────────────────────────── */
+    if (LAN_USE_STATIC_IP)
+    {
+        ESP_RETURN_ON_ERROR(apply_lan_static_ip(), TAG, "Static IP config failed");
+    }
 
     /* ── Register events ─────────────────────────────────── */
     ESP_RETURN_ON_ERROR(

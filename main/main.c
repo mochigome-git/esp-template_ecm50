@@ -177,7 +177,8 @@ static cJSON *build_payload(const char *field_key, cJSON *data, net_iface_t net_
  *  handled by the caller since it also needs mqtt_fail_count state.
  * ══════════════════════════════════════════════════════════ */
 static bool poll_and_publish_devices(net_iface_t net_mode, int rssi,
-                                     bool *any_pub_ok, bool *any_pub_attempted)
+                                     bool *any_pub_ok, bool *any_pub_attempted,
+                                     uint32_t *device_ticks)   /* ← add parameter */
 {
     bool any_read_error = false;
     *any_pub_ok = false;
@@ -186,6 +187,15 @@ static bool poll_and_publish_devices(net_iface_t net_mode, int rssi,
     for (size_t i = 0; i < MODBUS_DEVICE_COUNT; i++)
     {
         const modbus_device_t *dev = &MODBUS_DEVICES[i];
+
+        /* ── Per-device interval gate ── */
+        device_ticks[i]++;
+        uint32_t interval = dev->publish_interval_s
+                            ? dev->publish_interval_s
+                            : PUBLISH_INTERVAL_S;
+        if (device_ticks[i] < interval)
+            continue;
+        device_ticks[i] = 0;
 
         uint8_t scratch[MODBUS_DEVICE_MAX_DATA_SIZE];
         memset(scratch, 0, sizeof(scratch));
@@ -234,7 +244,6 @@ static bool poll_and_publish_devices(net_iface_t net_mode, int rssi,
 
     return any_read_error;
 }
-
 /* ══════════════════════════════════════════════════════════
  *  Modbus init with retry
  * ══════════════════════════════════════════════════════════ */
@@ -367,7 +376,8 @@ void app_main(void)
     /* ══════════════════════════════════════════════════════
      *  Main loop
      * ══════════════════════════════════════════════════════ */
-    int tick = 0;
+    uint32_t device_ticks[MODBUS_DEVICE_COUNT];
+    memset(device_ticks, 0, sizeof(device_ticks));
     int net_check_tick = 0;
     int heartbeat_tick = 0;
     int net_fail_count = 0;
@@ -381,7 +391,6 @@ void app_main(void)
     {
         esp_task_wdt_reset();
         vTaskDelay(pdMS_TO_TICKS(1000));
-        tick++;
         net_check_tick++;
         heartbeat_tick++;
 
@@ -425,39 +434,33 @@ void app_main(void)
                 ESP_LOGW(TAG, "[HB] Heartbeat failed");
         }
 
-        /* ── Publish cycle ── one payload per device in MODBUS_DEVICES ── */
-        if (tick >= PUBLISH_INTERVAL_S)
+       /* ── Publish cycle ── per-device interval gates inside the function ── */
+        esp_task_wdt_reset();
+
+        bool any_pub_ok, any_pub_attempted;
+        bool any_read_error = poll_and_publish_devices(last_net_mode, last_rssi,
+                                                    &any_pub_ok, &any_pub_attempted,
+                                                    device_ticks);
+
+        if (any_pub_attempted && !any_pub_ok)
         {
-            tick = 0;
+            mqtt_fail_count++;
+            ESP_LOGW(TAG, "[MQTT] All publishes failed this cycle (%d/%d)",
+                    mqtt_fail_count, MQTT_FAIL_RESET_COUNT);
+            if (mqtt_fail_count >= MQTT_FAIL_RESET_COUNT)
+                hard_reset("MQTT publish repeatedly failed");
+        }
+        else if (any_pub_attempted)   /* only reset counter when we actually tried */
+        {
+            mqtt_fail_count = 0;
+        }
+
+        if (any_read_error)
+        {
             esp_task_wdt_reset();
-
-            bool any_pub_ok, any_pub_attempted;
-            bool any_read_error = poll_and_publish_devices(last_net_mode, last_rssi,
-                                                            &any_pub_ok, &any_pub_attempted);
-
-            /* Only count the cycle as an MQTT failure if EVERY device's
-             * publish failed — one flaky device shouldn't trigger a
-             * reboot while the broker is otherwise reachable. */
-            if (any_pub_attempted && !any_pub_ok)
-            {
-                mqtt_fail_count++;
-                ESP_LOGW(TAG, "[MQTT] All publishes failed this cycle (%d/%d)",
-                         mqtt_fail_count, MQTT_FAIL_RESET_COUNT);
-                if (mqtt_fail_count >= MQTT_FAIL_RESET_COUNT)
-                    hard_reset("MQTT publish repeatedly failed");
-            }
-            else
-            {
-                mqtt_fail_count = 0;
-            }
-
-            if (any_read_error)
-            {
-                esp_task_wdt_reset();
-                ESP_LOGW(TAG, "[Modbus] Errors — reconnecting...");
-                modbus_close(&s_modbus);
-                init_modbus();
-            }
+            ESP_LOGW(TAG, "[Modbus] Errors — reconnecting...");
+            modbus_close(&s_modbus);
+            init_modbus();
         }
     }
 }

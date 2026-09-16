@@ -7,7 +7,7 @@
 *.der
 secrets.h
 secrets.c
-config.h
+.vscode
 
 # ── macOS ─────────────────────────────────────────────────────
 .DS_Store

@@ -19,36 +19,51 @@
  *    3. Add a { ... } entry to MODBUS_DEVICES.
  * ══════════════════════════════════════════════════════════ */
 
-        /* Payload field option 
-        - metric_a  text
-        - metric_b  text 
-        - metric_c  text
-        - readings  jsonb
-        - output    jsonb
-        - limits    jsonb
-        - energy    jsonb
-        - status    jsonb        
-        */
+/* Payload field option
+- metric_a  text
+- metric_b  text
+- metric_c  text
+- readings  jsonb
+- output    jsonb
+- limits    jsonb
+- energy    jsonb
+- status    jsonb
+*/
 
 const modbus_device_t MODBUS_DEVICES[] = {
     {
-        .name          = "power-meter",
-        .payload_field = "energy",   
-        .slave_addr    = 1,
-        .data_size     = sizeof(powermeter_data_t),
-        .read          = powermeter_read_generic,
-        .to_json       = powermeter_to_json_generic,
-        .on_data       = machine_run_capture, /* caches i_rms for the pressure-alarm run gate */
+        .name = "power-meter",
+        .payload_field = "energy",
+        .slave_addr = 1,
+        .data_size = sizeof(powermeter_data_t),
+        .read = powermeter_read_generic,
+        .to_json = powermeter_to_json_generic,
+        .on_data = machine_run_capture, /* caches i_rms for the pressure-alarm run gate */
+        .publish_interval_s = 10,
     },
-        {
-        .name          = "pressure",
-        .payload_field = "readings",   
-        .slave_addr    = 2,          
-        .data_size     = sizeof(pressure_data_t),
-        .read          = pressure_read_generic,
-        .to_json       = pressure_to_json_generic,
-        .on_data       = pressure_alarm_check, /* drives DO1/DO2 off the runtime threshold */
+    {
+        .name = "power-meter",
+        .payload_field = "energy",
+        .slave_addr = 2,
+        .data_size = sizeof(powermeter_data_t),
+        .read = powermeter_read_generic,
+        .to_json = powermeter_to_json_generic,
+        .on_data = machine_run_capture, /* caches i_rms for the pressure-alarm run gate */
+        .publish_interval_s = 10,
     },
+
+    /*
+    {
+        .name = "pressure",
+        .payload_field = "readings",
+        .slave_addr = 2,
+        .data_size = sizeof(pressure_data_t),
+        .read = pressure_read_generic,
+        .to_json = pressure_to_json_generic,
+        .on_data = pressure_alarm_check,  // drives DO1/DO2 off the runtime threshold
+        .publish_interval_s = 30,
+    },
+    */
 
     /* Next slave goes here once you share its register table, e.g.:
     {

@@ -5,19 +5,16 @@
 #include "cJSON.h"
 #include "modbus_utils.h"
 
-/* 三相交流采集器 (南京杰效) — combined-phase ("合相") electrical data,
- * matches the target payload shape:
- * {
- *   "v_rms": 220.5, "i_rms": 3.21,
- *   "p_active_kw": 0.65, "p_reactive_kvar": 0.12, "p_apparent_kva": 0.68,
- *   "power_factor": 0.95, "frequency_hz": 50.0,
- *   "energy_import_kwh": 12345.6, "energy_export_kwh": 0.0,
- *   "energy_active_total_kwh": 12345.6,
- *   "energy_reactive_import_kvarh": 0.0, "energy_reactive_export_kvarh": 0.0,
- *   "energy_reactive_total_kvarh": 0.0
- * }
+/* 三相交流采集器 (南京杰效) — combined-phase ("合相") + per-phase electrical
+ * data. JSON payload now includes both the original combined-phase
+ * fields (v_rms, i_rms, p_active_kw, ...) and per-phase breakdowns
+ * (v_a/b/c, i_a/b/c, pf_a/b/c, angle_a/b/c) plus leakage_current_a and
+ * module_temp_c — added to support voltage/current imbalance, PF
+ * per-phase drag, and wiring-fault detection in power_kpi analytics.
+ * See powermeter_to_json() for the full field list.
  */
-typedef struct {
+typedef struct
+{
     double v_rms;
     double i_rms;
     double p_active_kw;
@@ -30,8 +27,14 @@ typedef struct {
     double energy_active_total_kwh;
     double energy_reactive_import_kvarh;
     double energy_reactive_export_kvarh;
+    double v_a, v_b, v_c;
+    double i_a, i_b, i_c;
+    double leakage_current_a;
+    double pf_a, pf_b, pf_c;
+    double angle_a, angle_b, angle_c;
+    double module_temp_c;
     double energy_reactive_total_kvarh;
-    bool   ok;   /* true if the Modbus read + parse succeeded */
+    bool ok; /* true if the Modbus read + parse succeeded */
 } powermeter_data_t;
 
 /**
@@ -55,4 +58,4 @@ cJSON *powermeter_to_json(const powermeter_data_t *out);
  * Just cast void* to powermeter_data_t* and forward. Every decode_*.c
  * module needs a matching pair of these to be pluggable into the table. */
 esp_err_t powermeter_read_generic(modbus_t *mb, uint8_t slave_addr, void *out);
-cJSON    *powermeter_to_json_generic(const void *data);
+cJSON *powermeter_to_json_generic(const void *data);
